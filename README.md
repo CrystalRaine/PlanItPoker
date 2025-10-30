@@ -18,7 +18,7 @@ both should be accessable from LAN, backend by default, and frontend by run argu
 
 ## Frontend 
 
-written in react, (Vite, see project config [here](backend/vite.config.ts), or the documentation [here](https://vite.dev/guide/)) 
+written in react, (Vite, see project config [here](frontend/vite.config.ts), or the documentation [here](https://vite.dev/guide/)) 
 
 - [App.tsx](frontend/src/App.tsx)
 	- sets up page routing with react-router-dom
