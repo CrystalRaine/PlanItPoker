@@ -20,17 +20,17 @@ both should be accessable from LAN, backend by default, and frontend by run argu
 
 written in react, (Vite, see /backend/vite.config.ts) 
 
-- /frontend/src/App.tsx
+- [App.tsx](frontend/src/App.tsx)
 	- sets up page routing with react-router-dom
 	- some basic html page framing
-- /frontend/src/Default.tsx
+- [Default.tsx](frontend/src/Default.tsx)
 	- default example page. 
 	- exists, but for testing only
-- /frontend/src/main.tsx
+- [main.tsx](frontend/src/main.tsx)
 	- app root
-- /frontend/src/utilities/websocket.tsx
+- [websocket.tsx](frontend/src/utilities/websocket.tsx)
 	- defines useWebsocket hook for use across pages.
-- /frontend/src/Pages/
+- [Pages Folder](frontend/src/Pages/)
 	- folders in this directory each define a page (called in App.tsx)
 	- each folder contains it's 'namesake' .tsx file, alongside the .css file for the page specifically. 
 	- folders may contain additional .tsx files for supporting React components that are re-used
@@ -39,15 +39,15 @@ written in react, (Vite, see /backend/vite.config.ts)
 
 written with express and ws websockets.
 
-- /backend/room.ts
+- [room.ts](backend/room.ts)
 	- data structures
 	- room management
-- /backend/server.js
+- [server.js](/backend/server.js)
 	- creates express server
 	- sets up middleware
 		- proxy planned for future developemnt
 	- calls setup for websockets
-- /backend/wsSetup.ts
+- [wsSetup.ts](backend/wsSetup.ts)
 	- sets up websocket
 	- sets up message types for interaction with room.ts management
 	- keeps track of clients
