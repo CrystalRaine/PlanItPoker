@@ -6,7 +6,7 @@ The backend is written in JS/TS with an express server and websockets (ws librar
 
 (while you are free to fork this project, if this isn't a good base for what you need, https://poker-planning.net/ is a decent alternative, and is another open source codebase for modification as well)
 
-### [TODO](todo.md)
+### [TODO](TODO.md)
 
 ## Running the project
 
