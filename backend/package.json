@@ -1,0 +1,25 @@
+{
+  "name": "planitpokerbackend",
+  "version": "1.0.0",
+  "description": "Plan-It-Poker application backend",
+  "license": "ISC",
+  "author": "Benjamin Kelly",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "http-proxy-middleware": "^3.0.5",
+    "node-http-proxy": "^0.2.4",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.7.2",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.9.3"
+  }
+}

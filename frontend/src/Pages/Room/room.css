@@ -1,0 +1,29 @@
+.points {
+    font-size: 3em;
+    height: 2em;
+    border-radius: .25em;
+    width: 2em !important;
+    padding: 0.5rem 0;
+}
+
+.playerName {
+    font-size: 2em;
+}
+
+.choices {
+    font-size: 3em;
+    width: 1.5em !important;
+}
+
+.interactionButton {
+    font-size: 2em;
+}
+
+.rowPadding {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.buttonMTop {
+    margin-top: 2em;
+}
