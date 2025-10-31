@@ -1,16 +1,20 @@
-import { Button, Col, Container, Form, Row } from "react-bootstrap";
-import type { Member, RoomData } from "./Room";
+import { Button, Col, Container, Form, Row, Toast, ToastContainer } from "react-bootstrap";
+import { copyURL, type Member, type RoomConfig, type RoomData } from "./Room";
 import { useWebSocket } from "../../utilities/websocket";
-import { useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
+import { useParams } from "react-router-dom";
 
 export function PlayerStatuses(props: {roomstatus:RoomData}){
     let playerCards:any = [];
 
+    if(!(!props.roomstatus.config.hostCanVote && props.roomstatus.client.role === 'host')) {
+        playerCards.push(<PlayerInfoCard playerData={props.roomstatus.client} roomData={props.roomstatus} highlight={true}/>)
+    }
     props.roomstatus.members.forEach((memberData)=>{
         if(memberData.role === 'host' && !props.roomstatus.config.hostCanVote){
             return;
         }
-        playerCards.push(<PlayerInfoCard playerData={memberData} roomData={props.roomstatus}/>)
+        playerCards.push(<PlayerInfoCard playerData={memberData} roomData={props.roomstatus} highlight={false}/>)
     });
 
     return (
@@ -20,9 +24,11 @@ export function PlayerStatuses(props: {roomstatus:RoomData}){
     )
 }
 
-function PlayerInfoCard(props: {playerData:Member, roomData:RoomData}) {
+function PlayerInfoCard(props: {playerData:Member, roomData:RoomData, highlight: boolean}) {
 
-    const classes = "points text-center " + (props.playerData.voted ? (props.roomData.cardsRevealed ? "text-bg-success" : "text-bg-warning") : "text-bg-danger");
+    const classes = "points text-center " + 
+        (props.playerData.voted ? (props.roomData.cardsRevealed ? "text-bg-success " : "text-bg-warning ") : "text-bg-danger ") + 
+        (props.highlight ? "border border-info " : " ");
 
     return (
         <Col className="col-2 playerCard">
@@ -47,11 +53,11 @@ export function ChoiceCards(props: {roomstatus: RoomData}) {
 
     let cards = [];
 
-    for(let i = 0; i < props.roomstatus.config.voteOptions.length; i++) {
+    for(let i = 0; i < props.roomstatus.config.voteOptions!.length; i++) {
         cards.push(
             <ChoiceCard 
-                optionName={props.roomstatus.config.voteOptions[i]} 
-                voteValue={props.roomstatus.config.voteValues[i]}
+                optionName={props.roomstatus.config.voteOptions![i]} 
+                voteValue={props.roomstatus.config.voteValues![i]}
             />
         );
     }
@@ -98,12 +104,9 @@ export function RoomInteractions(props: {roomstatus:RoomData}) {
         }
     });
 
-
     let reveal: JSX.Element | undefined = <RevealButton/>;
     let reset: JSX.Element | undefined = <ResetButton/>;
-
-
-
+    let copyJoinLink: JSX.Element | undefined = <CopyJoinLink/>;
 
     if(props.roomstatus.cardsRevealed) {
         reveal = undefined
@@ -117,10 +120,19 @@ export function RoomInteractions(props: {roomstatus:RoomData}) {
         reveal = undefined;
     }
 
+    if(props.roomstatus.client.role !== "host") {
+        copyJoinLink = undefined;
+    }
+
+    if(!props.roomstatus.config.resetBeforeReveal && !props.roomstatus.cardsRevealed) {
+        reset = undefined;
+    }
+
     return (
         <Row className="justify-content-center rowPadding">
             {reveal}
             {reset}
+            {copyJoinLink}
         </Row>
     )
 }
@@ -161,6 +173,47 @@ function ResetButton(){
     )
 }
 
+function CopyJoinLink(){
+    
+    const {roomID} = useParams()
+    const [showToast, setShowToast] = useState(false);
+
+    useEffect(() => {
+        if (showToast) {
+        const timer = setTimeout(() => {
+            setShowToast(false);
+        }, 2000); // Hide after 2 seconds
+
+        return () => clearTimeout(timer); // Clean up the timer
+        }
+    }, [showToast]);
+
+    return (
+        <Col className="d-flex justify-content-center">
+            <Button onClick={()=>{
+                copyURL(roomID);
+                setShowToast(true);
+            }}>
+                <p className="text-center text-bg-primary interactionButton">
+                    Copy Join Link
+                </p>
+            </Button>
+            <ToastContainer>
+                <Toast
+                    onClose={()=>setShowToast(false)}
+                    show={showToast} 
+                    delay={2000} 
+                    autohide
+                >
+                    <Toast.Header>
+                        <strong>Copied!</strong>
+                    </Toast.Header>
+                </Toast>
+            </ToastContainer>
+        </Col>
+    )
+}
+
 export function AverageDisplay(props: {roomstatus:RoomData}){
 
     if(!props.roomstatus.cardsRevealed) {
@@ -174,9 +227,15 @@ export function AverageDisplay(props: {roomstatus:RoomData}){
         if(!member.currentChoice){
             return;
         }
-        avg += props.roomstatus.config.voteValues[props.roomstatus.config.voteOptions.indexOf(member.currentChoice)];
+        avg += props.roomstatus.config.voteValues![props.roomstatus.config.voteOptions!.indexOf(member.currentChoice)];
         votingMembers++;
     });
+
+    if(!props.roomstatus.client.currentChoice){
+        return;
+    }
+    avg += props.roomstatus.config.voteValues![props.roomstatus.config.voteOptions!.indexOf(props.roomstatus.client.currentChoice)];
+    votingMembers++;
 
     if(votingMembers === 0) {
         avg = 0;
@@ -197,13 +256,37 @@ export function AverageDisplay(props: {roomstatus:RoomData}){
     )
 }
 
+function BooleanSetting(props: {roomstatus:RoomData, description: string, name: string}) {
+
+    const { sendMessage } = useWebSocket();
+    const [value, setValue] = useState(props.roomstatus.config[props.name]);
+
+    return (
+        <Col>
+            <Form.Check
+                inline
+                checked={value}
+                onChange={(event)=>{
+                    setValue(event.target.checked);
+
+                    let optionObj:RoomConfig = {};
+                    optionObj[props.name] = event.target.checked;
+
+                    sendMessage(JSON.stringify({
+                        type: "updateConfig",
+                        options: optionObj
+                    }))
+                }}
+            />
+            {props.description}
+        </Col>
+    )
+}
+
 export function HostOptions(props: {roomstatus: RoomData}){
-    const [options, setOptions] = useState(props.roomstatus.config.voteOptions.join(",")); 
-    const [values, setValues] = useState(props.roomstatus.config.voteValues.join(",")); 
+    const [options, setOptions] = useState(props.roomstatus.config.voteOptions?.join(",")); 
+    const [values, setValues] = useState(props.roomstatus.config.voteValues?.join(",")); 
     const [link, setLink] = useState(props.roomstatus.currentURL); 
-    const [hostVotes, setHostVote] = useState(props.roomstatus.config.hostCanVote); 
-    const [hostReveal, setHostReveal] = useState(props.roomstatus.config.hostCanReveal); 
-    const [voteAfterReveal, setVoteAfterReveal] = useState(props.roomstatus.config.voteAfterReveal); 
     const { sendMessage } = useWebSocket();
 
     return [
@@ -263,8 +346,8 @@ export function HostOptions(props: {roomstatus: RoomData}){
                     sendMessage(JSON.stringify({
                         type: "updateConfig",
                         options: {
-                            voteOptions: options.replaceAll(" ", "").split(','),
-                            voteValues: values.replaceAll(" ", "").split(',').map((value)=>Number.parseFloat(value)),
+                            voteOptions: options?.replaceAll(" ", "").split(','),
+                            voteValues: values?.replaceAll(" ", "").split(',').map((value)=>Number.parseFloat(value)),
                         }
                     }))
                 }}>
@@ -273,54 +356,12 @@ export function HostOptions(props: {roomstatus: RoomData}){
             </Col>
         </Row>,
         <Row className="justify-content-center">
-            <Col>
-                <Form.Check
-                    inline
-                    checked={hostVotes}
-                    onChange={(event)=>{
-                        setHostVote(event.target.checked);
-                        sendMessage(JSON.stringify({
-                            type: "updateConfig",
-                            options: {
-                                hostCanVote: event.target.checked,
-                            }
-                        }))
-                    }}
-                />
-                Host Is Voting Member
-            </Col>
-            <Col>
-                <Form.Check
-                    inline
-                    checked={hostReveal}
-                    onChange={(event)=>{
-                        setHostReveal(event.target.checked);
-                        sendMessage(JSON.stringify({
-                            type: "updateConfig",
-                            options: {
-                                hostCanReveal: event.target.checked,
-                            }
-                        }))
-                    }}
-                />
-                Host Can Reveal
-            </Col>
-            <Col>
-                <Form.Check
-                    inline
-                    checked={voteAfterReveal}
-                    onChange={(event)=>{
-                        setVoteAfterReveal(event.target.checked);
-                        sendMessage(JSON.stringify({
-                            type: "updateConfig",
-                            options: {
-                                voteAfterReveal: event.target.checked,
-                            }
-                        }))
-                    }}
-                />
-                Can Vote After Reveal
-            </Col>
+            <BooleanSetting roomstatus={props.roomstatus} description="Host Is Voting Member" name="hostCanVote"/>
+            <BooleanSetting roomstatus={props.roomstatus} description="Host Can Reveal" name="hostCanReveal"/>
+            <BooleanSetting roomstatus={props.roomstatus} description="Can Vote After Reveal" name="voteAfterReveal"/>
+            <BooleanSetting roomstatus={props.roomstatus} description="Host sees voter names" name="hostAnonVoting"/>
+            <BooleanSetting roomstatus={props.roomstatus} description="Members see voter names" name="memberAnonVoting"/>
+            <BooleanSetting roomstatus={props.roomstatus} description="Can reset before reveal" name="resetBeforeReveal"/>
         </Row>
     ];
 

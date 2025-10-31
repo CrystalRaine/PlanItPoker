@@ -16,15 +16,20 @@ export type Member = {
 }
 
 export type RoomConfig = {
-    roomID: string,
-    hostCanVote: boolean,
-    hostCanReveal: boolean,
-    voteAfterReveal: boolean,
-    voteOptions: string[],
-    voteValues: number[],
+    [key: string]: any;
+    roomID?: string,
+    hostCanVote?: boolean,
+    hostCanReveal?: boolean,
+    hostAnonVoting?: boolean,
+    memberAnonVoting?: boolean,
+    voteAfterReveal?: boolean,
+    voteOptions?: string[],
+    voteValues?: number[],
+    resetBeforeReveal?: boolean,
 }
 
 export type RoomData = {
+    [key: string]: any;
     type: 'roomStatus',
     cardsRevealed: any,
     logs: any,
@@ -66,7 +71,7 @@ export default function Room(){
     return [
         <Row className='text-bg-primary'>
             <Col>
-                <a href='#' onClick={() => { copyURI(roomID) }}>
+                <a href='#' onClick={() => { copyURL(roomID) }}>
                     <h2 className='px-3 text-bg-primary'>
                         Room ID: {roomID}
                     </h2>
@@ -103,10 +108,8 @@ export default function Room(){
     ]
 } 
 
-function copyURI(url: string|undefined) {
+export function copyURL(url: string|undefined) {
     if(!url) return;
-    const baseUrl = `${window.location.protocol}//${window.location.host}`
-    navigator.clipboard.writeText(`${baseUrl}/join/${url}`).then(() => {
-    
-    }, () => {});
+    const baseUrl = `${window.location.protocol}//${window.location.host}` // http://address:port
+    navigator.clipboard.writeText(`${baseUrl}/join/${url}`);                // add on /join/:roomID
 }

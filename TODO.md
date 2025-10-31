@@ -1,16 +1,7 @@
 - Light mode / Dark mode
-
-- Link Proxy setup 
-
+- Link Proxy setup (or implement [Jira API](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#permissions))
 - Adjustable split for link display
-
-- nicer UI for value <-> pair list when setting vote options
-
+- Nicer UI for value <-> pair list when setting vote options
 - Allow reloading page while in room / allow joining with link of form URL/room/:ID
-
-- More obvious Copy link button with feedback for host
-
 - Allow host to see logs (show button)
-
-- setting for anon. voting
-
+- spectators

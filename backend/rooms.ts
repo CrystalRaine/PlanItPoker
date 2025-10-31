@@ -1,6 +1,7 @@
 import { WebSocket } from 'ws'
 
 export class Options {
+    [key: string]: any;
     roomID?: string;
     hostCanVote?: boolean;
     hostCanReveal?: boolean;
@@ -8,6 +9,8 @@ export class Options {
     voteOptions?: string[];
     voteValues?: number[];
     currentURL?: string;
+    hostAnonVoting?: boolean;
+    memberAnonVoting?: boolean;
 }
 
 export class LogItem {
@@ -27,12 +30,16 @@ export class LogItem {
 }
 
 export class RoomConfiguration {
+    [key: string]: any;
     roomID: string = "";
     hostCanVote: boolean = true;
     hostCanReveal: boolean = true;
     voteAfterReveal: boolean = false;
     voteOptions: string[] = ["0", "1/2", "1", "2", "3", "5", "8", "13"];
     voteValues: number[] = [0,0.5,1,2,3,5,8,13];
+    hostAnonVoting: boolean = true;
+    memberAnonVoting: boolean = true;
+    resetBeforeReveal: boolean = false;
 
     public constructor(roomID: string){
         this.roomID = roomID;
@@ -45,7 +52,10 @@ export class RoomConfiguration {
             hostCanReveal: this.hostCanReveal,
             voteOptions: this.voteOptions,
             voteValues: this.voteValues,
-            voteAfterReveal: this.voteAfterReveal
+            voteAfterReveal: this.voteAfterReveal,
+            hostAnonVoting: this.hostAnonVoting,
+            memberAnonVoting: this.memberAnonVoting,
+            resetBeforeReveal: this.resetBeforeReveal,
         }
     }
 }
@@ -101,33 +111,15 @@ export class Room {
     }
 
     applyOptions(ws: WebSocket, options: Options | undefined) {
-        if(!(this.getMember(ws)?.role === "host")) {
+        if(!(this.getMember(ws)?.role === "host") || !options) {
             return;
         }
 
-        if(options?.hostCanReveal !== undefined) {
-            this.config.hostCanReveal = options.hostCanReveal;
-        }
+        const keys = Object.keys(options)
 
-        if(options?.hostCanVote !== undefined) {
-            this.config.hostCanVote = options.hostCanVote;
-        }
-
-        if(options?.voteAfterReveal !== undefined) {
-            this.config.voteAfterReveal = options.voteAfterReveal;
-        }
-
-        if(options?.voteOptions) {
-            this.config.voteOptions = options.voteOptions;
-        }
-
-        if(options?.voteValues) {
-            this.config.voteValues = options.voteValues;
-        }
-
-        if(options?.currentURL !== undefined) {
-            this.currentURL = options.currentURL;
-        }
+        keys.forEach((value)=>{
+            this.config[value] = options[value];            
+        });
 
         this.broadcastRoomStatus();
     }
@@ -197,7 +189,7 @@ export class Room {
     }
 
     resetChoices(ws: WebSocket){
-        if(!(this.getMember(ws)?.role === "host") && !this.cardsRevealed){
+        if(!this.cardsRevealed && !this.config.resetBeforeReveal){
             return;
         }
         this.members.forEach((member: Member)=>{
@@ -209,14 +201,36 @@ export class Room {
     }
 
     roomStatus(ws: WebSocket){
+
+        const clientMember = this.getMember(ws);
+        let memberList = this.members
+            .filter((member) => member.ws !== ws)
+            .map(member => {
+                return member.value(ws, this.cardsRevealed)
+            });
+        
+        if(clientMember?.role === 'host' && !this.config.hostAnonVoting) {
+            memberList = memberList.map((member)=>{
+                member.name = "";
+                return member;
+            });
+        }
+
+        if(clientMember?.role !== 'host' && !this.config.memberAnonVoting) {
+            memberList = memberList.map((member)=>{
+                member.name = "";
+                return member;
+            });
+        }
+
         return {
             type: "roomStatus",
             cardsRevealed: this.cardsRevealed,
             logs: this.logs.map((logItem)=>logItem.value()),
             config: this.config.value(),
             currentURL: this.currentURL,
-            members: this.members.map(member => member.value(ws, this.cardsRevealed)),
-            client: this.getMember(ws)?.value(ws, this.cardsRevealed),
+            members: memberList,
+            client: clientMember?.value(ws, this.cardsRevealed),
         }
     }
 
