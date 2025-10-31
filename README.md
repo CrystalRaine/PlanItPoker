@@ -4,8 +4,6 @@ This is a Poker-planning web server + frontend application. many of these alread
 The frontend of this project is written in TS/React with Bootstrap styling, and websockets for primary interaction to backend.
 The backend is written in JS/TS with an express server and websockets (ws library). 
 
-(while you are free to fork this project, if this isn't a good base for what you need, https://poker-planning.net/ is a decent alternative, and is another open source codebase for modification as well)
-
 ### [TODO](TODO.md)
 
 ## Running the project
