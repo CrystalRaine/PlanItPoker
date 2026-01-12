@@ -119,5 +119,5 @@ export function useWebSocket() {
     wsManager.send(msg);
   }, []);
 
-  return { status: wsManager.connected, lastMessage, sendMessage, reconnect: wsManager.reconnect, register: wsManager.register};
+  return { disconnect: wsManager.disconnect, status: wsManager.connected, lastMessage, sendMessage, reconnect: wsManager.reconnect, register: wsManager.register};
 }

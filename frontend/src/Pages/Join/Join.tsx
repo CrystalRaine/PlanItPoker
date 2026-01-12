@@ -1,47 +1,34 @@
 import { Button, Container, Form } from "react-bootstrap";
-import { useWebSocket } from "../../utilities/websocket";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Cookies from "js-cookie";
+import { useWebSocket } from "../../utilities/websocket";
 
 export default function Join(){
 
-    const { sendMessage, reconnect } = useWebSocket();
+    const { reconnect } = useWebSocket();
     const navigate = useNavigate();
     const [ username, setUsername ] = useState("");
-    const [ roomID, setRoomID ] = useState("");
-    const { roomID:id } = useParams();
-    const [ lockID, setLockID ] = useState(false);
+    const [ inputRoomID, setRoomID ] = useState("");
+    const { roomID, userID } = useParams();
 
+    reconnect();
 
     useEffect(() => {
         const savedUsername = Cookies.get("joinUsername");
         const savedRoomID = Cookies.get("joinRoomID");
-        if (savedUsername) {
-            setUsername(savedUsername);
-        }
-        if (savedRoomID) {
+        
+        if(roomID) {
+            setRoomID(roomID);
+        } else if(savedRoomID) {
             setRoomID(savedRoomID);
         }
-
-        if(id){
-            if(id && savedUsername) {
-                sendMessage( 
-                    JSON.stringify({
-                        type: "join",
-                        input: id,
-                        username: savedUsername.trim(),
-                    })
-                );
-                navigate(`/room/${id}`);
-                return;
-            }
-
-            setRoomID(id);
-            setLockID(true);
+        
+        if(userID){
+            setUsername(userID);
+        } else if(savedUsername){
+            setUsername(savedUsername);
         }
-
-        reconnect();
     }, []);
 
 
@@ -62,28 +49,20 @@ export default function Join(){
                 type="text"
                 placeholder="Room Name"
                 onChange={(event) => setRoomID(event.target.value)}
-                value={roomID}
+                value={inputRoomID}
                 className="mb-3"
-                disabled={lockID}
             />
             <div className="d-grid gap-2">
                 <Button
                 variant="primary"
                 size="lg"
                 onClick={() => {
-                    let room = roomID.trim();
+                    let room = inputRoomID.trim();
                     const user = username.trim();
 
                     Cookies.set("joinUsername", user, { expires: 7 });
                     Cookies.set("joinRoomID", room, { expires: 7 });
-                    sendMessage(
-                    JSON.stringify({
-                        type: "join",
-                        input: room,
-                        username: user,
-                    })
-                    );
-                    navigate(`/room/${room}`);
+                    navigate(`/room/${room}/${user}`);
                 }}
                 >
                 Join

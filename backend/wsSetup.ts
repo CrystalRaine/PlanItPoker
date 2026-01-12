@@ -12,9 +12,8 @@ type Message = {
     options?: Options,
 }
 
-let memberi = 0;
-
 function removeMemberFromRoom(ws: WebSocket){
+
     if(clients.has(ws)){
         // remove from previous room if necessary
         console.log(`removing member from room ${clients.get(ws)}`);
@@ -22,15 +21,39 @@ function removeMemberFromRoom(ws: WebSocket){
         let roomId = getRoomId(ws)!;
         let room = getRoom(ws);
         room?.removeMember(ws);
-        if(room?.members.length === 0){
+        if(room?.members.length === 1 && room.members[0].role === 'host' && room.members[0].ws === null){
             console.log("deleting empty room");
             rooms.delete(roomId);
         }
         clients.delete(ws);
     }
 }
+function createRoom(roomName: string, username: string){
+
+    if(!username){
+        console.log("must create with a username");
+        return
+    }
+
+    if(!roomName) {
+        return;
+    }
+
+    if(!rooms.has(roomName)) {
+        const roomNum = roomName;
+        const memberName = `${username}`;
+        let room = new Room(roomNum);
+        room.addMember(memberName, null);
+        
+        rooms.set(roomNum, room);
+        console.log(`created new room ${roomNum} as ${memberName}`)
+    } else {
+        console.log(`room ${roomName} already exists`)
+    }
+}
 
 function getRoom(ws: WebSocket){
+
     const roomId = getRoomId(ws);
     if(roomId){
         return rooms.get(roomId);
@@ -39,10 +62,12 @@ function getRoom(ws: WebSocket){
 }
 
 function getRoomId(ws: WebSocket){
+
     return clients.get(ws);
 }
 
 export default function SetupWSS(server:http.Server) {
+
     const wss = new WebSocketServer({ server })
 
     wss.on('connection', (ws:WebSocket) => {
@@ -73,6 +98,7 @@ export default function SetupWSS(server:http.Server) {
                     }
 
                     if(!messageData.input) {
+                        console.log("please give a room ID to join");
                         break;
                     }
 
@@ -80,30 +106,22 @@ export default function SetupWSS(server:http.Server) {
                     if(rooms.has(messageData.input)){
                         const roomNum = messageData.input;
                         const memberName = `${messageData.username}`;
-                        rooms.get(roomNum)!.addMember(memberName, ws);
+                        let room = rooms.get(roomNum)
+                        
+                        room!.addMember(memberName, ws);
                         clients.set(ws, roomNum);
                         console.log(`joined room ${roomNum} as ${memberName}`)
-                    }
-                    break;
-                case "create":
-                    if(!messageData.username){
-                        console.log("must create with a username");
-                        break;
-                    }
-
-                    if(!messageData.input) {
-                        break;
-                    }
-
-                    removeMemberFromRoom(ws);
-                    if(!rooms.has(messageData.input)) {
+                    } else {
                         const roomNum = messageData.input;
                         const memberName = `${messageData.username}`;
-                        let room = new Room(roomNum);
-                        room.addMember(memberName, ws);
-                        rooms.set(roomNum, room);
+
+                        createRoom(roomNum, memberName);
+                        console.log(`created room ${roomNum} as ${memberName}`)
+
+                        let room = rooms.get(roomNum)
+                        room!.addMember(memberName, ws);
                         clients.set(ws, roomNum);
-                        console.log(`created new room ${roomNum} as ${memberName}`)
+                        console.log(`joined room ${roomNum} as ${memberName}`)
                     }
                     break;
                 default: 

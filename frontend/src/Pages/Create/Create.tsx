@@ -1,28 +1,38 @@
 import { Button, Container, Form } from "react-bootstrap";
-import { useWebSocket } from "../../utilities/websocket";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import Cookies from "js-cookie";
+import { useWebSocket } from "../../utilities/websocket";
 
 export default function Create(){
 
-    const { sendMessage, reconnect } = useWebSocket();
     const navigate = useNavigate();
-    const [ username, setUsername ] = useState("");
-    const [ roomID, setRoomID ] = useState("");
+    const { reconnect } = useWebSocket();
 
+    const { roomID, userID } = useParams();
+
+    const [ username, setUsername ] = useState("");
+    const [ inputRoomID, setRoomID ] = useState("");
+
+    reconnect();
 
     useEffect(() => {
         const savedUsername = Cookies.get("username");
         const savedRoomID = Cookies.get("roomID");
-        if (savedUsername) {
-            setUsername(savedUsername);
-        }
-        if (savedRoomID) {
+        
+        if(roomID) {
+            setRoomID(roomID);
+        } else if(savedRoomID) {
             setRoomID(savedRoomID);
         }
-        reconnect();
+        
+        if(userID){
+            setUsername(userID);
+        } else if(savedUsername){
+            setUsername(savedUsername);
+        }
+        
     }, []);
 
 
@@ -32,47 +42,40 @@ export default function Create(){
                 Create Room
             </h1>
             <Form>
-            <Form.Control
-                type="text"
-                placeholder="Username"
-                onChange={(event) => setUsername(event.target.value)}
-                value={username}
-                className="mb-3"
-            />
-            <Form.Control
-                type="text"
-                placeholder="Room Name (Random if empty)"
-                onChange={(event) => setRoomID(event.target.value)}
-                value={roomID}
-                className="mb-3"
-            />
-            <div className="d-grid gap-2">
-                <Button
-                variant="primary"
-                size="lg"
-                onClick={() => {
-                    let room = roomID.trim();
-                    const user = username.trim();
+                <Form.Control
+                    type="text"
+                    placeholder="Username"
+                    onChange={(event) => setUsername(event.target.value)}
+                    value={username}
+                    className="mb-3"
+                />
+                <Form.Control
+                    type="text"
+                    placeholder="Room Name (Optional)"
+                    onChange={(event) => setRoomID(event.target.value)}
+                    value={inputRoomID}
+                    className="mb-3"
+                />
+                <div className="d-grid gap-2">
+                    <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={() => {
+                        let room = inputRoomID.trim();
+                        const user = username.trim();
 
-                    if (!room) {
-                    room = uuidv4();
-                    }
+                        if (!room) {
+                            room = uuidv4();
+                        }
 
-                    Cookies.set("username", user, { expires: 7 });
-                    Cookies.set("roomID", room, { expires: 7 });
-                    sendMessage(
-                    JSON.stringify({
-                        type: "create",
-                        input: room,
-                        username: user,
-                    })
-                    );
-                    navigate(`/room/${room}`);
-                }}
-                >
-                Create
-                </Button>
-            </div>
+                        Cookies.set("username", user, { expires: 7 });
+                        Cookies.set("roomID", room, { expires: 7 });
+                        navigate(`/room/${room}/${user}`);
+                    }}
+                    >
+                    Create
+                    </Button>
+                </div>
             </Form>
         </Container>
     );

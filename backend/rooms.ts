@@ -62,11 +62,11 @@ export class RoomConfiguration {
 
 export class Member {
     name: string;
-    ws: WebSocket;
+    ws: WebSocket | null;
     currentChoice: string | undefined;
     role: "member" | "host";
 
-    public constructor(name: string, ws: WebSocket){
+    public constructor(name: string, ws: WebSocket | null){
         this.name = name;
         this.ws = ws;
         this.currentChoice = undefined;
@@ -105,9 +105,13 @@ export class Room {
         this.config = new RoomConfiguration(roomID);
     }
 
-    logAction(ws: WebSocket, action:string){
-        const member = this.getMember(ws);
-        this.logs.push(new LogItem(member!.name, action));
+    logAction(ws: WebSocket | null, action:string){
+        if(ws){
+            const member = this.getMember(ws);
+            this.logs.push(new LogItem(member!.name, action));
+        } else {
+            this.logs.push(new LogItem("host", action));
+        }
     }
 
     applyOptions(ws: WebSocket, options: Options | undefined) {
@@ -156,23 +160,37 @@ export class Room {
         this.broadcastRoomStatus();
     }
 
-    addMember(name: string, ws: WebSocket){
+    addMember(name: string, ws: WebSocket | null){
+
+        // if it's the host joining or re-joining, attach to host member
+        let host:Member|undefined = this.members.find(member => member.role === 'host');
+        if(host && !host.ws && host.name === name) {
+            host.ws = ws;
+            this.broadcastRoomStatus();
+            return;
+        }
+
         let member = new Member(name, ws);
         if(this.members.length === 0) {
             member.makeHost();
+            this.logAction(null, "created the room");
         }
+
         this.members.push(member);
-        this.logAction(ws, "joined");
         this.broadcastRoomStatus();
     }
 
     removeMember(ws: WebSocket){
         this.logAction(ws, "left");
         let member = this.getMember(ws);
-        this.members = this.members.filter(member => {return (member.ws !== ws)})
-        if(member?.role === "host" && this.members.length > 0){
-            this.members[0].makeHost();
+
+        // hosts don't actually get removed, just disjointed from the member.
+        if(member?.role === 'host') {
+            member.ws = null;
+        } else {
+            this.members = this.members.filter(member => {return (member.ws !== ws)})
         }
+
         this.broadcastRoomStatus();
     }
 
@@ -185,7 +203,7 @@ export class Room {
     }
 
     broadcast(message:any){
-        this.members.forEach(member => member.ws.send(JSON.stringify(message)));
+        this.members.filter(member => member.ws).forEach(member => member.ws!.send(JSON.stringify(message)));
     }
 
     resetChoices(ws: WebSocket){
@@ -235,6 +253,6 @@ export class Room {
     }
 
     broadcastRoomStatus(){
-        this.members.forEach(member => member.ws.send(JSON.stringify(this.roomStatus(member.ws))));
+        this.members.filter(member => member.ws).forEach(member => member.ws!.send(JSON.stringify(this.roomStatus(member.ws!))));
     }
 }

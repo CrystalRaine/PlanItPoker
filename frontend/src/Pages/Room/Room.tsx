@@ -40,18 +40,29 @@ export type RoomData = {
 }
 
 export default function Room(){
-    const { lastMessage, register } = useWebSocket();
-    const {roomID} = useParams()
+    const { lastMessage, sendMessage, register } = useWebSocket();
+    const {roomID, userID} = useParams()
     const [roomstatus, setRoomStatus] = useState<RoomData | undefined>(undefined);
 
     const handleMessage = (message: any) =>{
+
         if(!message) return;
         if(message.type === 'open' || message.type === 'close') return;
         if(message.type === 'error') return;
+        // alert(JSON.stringify(message));
         setRoomStatus(JSON.parse(message.data));
     }
 
     useEffect(()=>{
+
+        sendMessage(
+            JSON.stringify({
+                type: "join",
+                input: roomID,
+                username: userID,
+            })
+        );
+        
         register((message:any)=>{
             handleMessage(message);
         })

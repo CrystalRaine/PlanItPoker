@@ -18,9 +18,12 @@ export default function App() {
                     <Route path="/" element={<Home/>}/>
                     <Route path="/home" element={<Home/>}/>
                     <Route path="/create" element={<Create/>}/>
-                    <Route path="/join/:roomID" element={<Join/>}/>
+                    <Route path="/create/:roomID" element={<Create/>}/>
+                    <Route path="/create/:roomID/:userID" element={<Create/>}/>
                     <Route path="/join" element={<Join/>}/>
-                    <Route path="/room/:roomID" element={<Room/>}/>
+                    <Route path="/join/:roomID" element={<Join/>}/>
+                    <Route path="/join/:roomID/:userID" element={<Join/>}/>
+                    <Route path="/room/:roomID/:userID" element={<Room/>}/>
                     <Route path="/Default" element={<Default/>}/>
                 </Routes>
             </div>

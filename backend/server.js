@@ -6,24 +6,14 @@ import SetupWSS from './wsSetup.ts'
 const app = express()
 const port = 3000
 
-
-
-// app.use((req, res, next)=>{
-
-
-
-//     const proxyMiddleware = createProxyMiddleware({
-//         target: 'http://www.example.org/api',
-//         changeOrigin: true,
-//     });
-
-//     proxyMiddleware(req, res, next);
-// });
-
 app.use(express.json())
 app.get('/', (req, res) => {
     res.send('Hello from Express + WebSocket server!')
-})
+});
+
+app.post('/createRoom', () => {
+
+});
 
 const server = http.createServer(app)
 
