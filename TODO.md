@@ -1,6 +1,3 @@
-- Light mode / Dark mode
+- Light mode / Dark mode / Theming
 - Link Proxy setup (or implement [Jira API](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#permissions))
-- Adjustable split for link display
-- Nicer UI for value <-> pair list when setting vote options
-- Allow host to see logs (show button)
 - spectators

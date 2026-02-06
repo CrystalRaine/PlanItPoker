@@ -20,12 +20,15 @@ export type RoomConfig = {
     roomID?: string,
     hostCanVote?: boolean,
     hostCanReveal?: boolean,
+    membersCanReveal?: boolean,
     hostAnonVoting?: boolean,
     memberAnonVoting?: boolean,
     voteAfterReveal?: boolean,
+    nonVoteReveal?: boolean,
     voteOptions?: string[],
     voteValues?: number[],
     resetBeforeReveal?: boolean,
+    membersCanReset?: boolean,
 }
 
 export type RoomData = {
@@ -82,7 +85,7 @@ export default function Room(){
     return [
         <Row className='text-bg-primary'>
             <Col>
-                <a href='#' onClick={() => { copyURL(roomID) }}>
+                <a href={`http://${window.location.host}/join/${roomID}`} onClick={() => { copyURL(roomID) }}>
                     <h2 className='px-3 text-bg-primary'>
                         Room ID: {roomID}
                     </h2>

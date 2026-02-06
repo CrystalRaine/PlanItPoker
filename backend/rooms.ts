@@ -31,15 +31,19 @@ export class LogItem {
 
 export class RoomConfiguration {
     [key: string]: any;
+    // Defaults
     roomID: string = "";
     hostCanVote: boolean = true;
     hostCanReveal: boolean = true;
+    membersCanReveal: boolean = false;
     voteAfterReveal: boolean = false;
     voteOptions: string[] = ["0", "1/2", "1", "2", "3", "5", "8", "13"];
     voteValues: number[] = [0,0.5,1,2,3,5,8,13];
     hostAnonVoting: boolean = true;
     memberAnonVoting: boolean = true;
     resetBeforeReveal: boolean = false;
+    membersCanReset: boolean = false;
+    nonVoteReveal: boolean = false;
 
     public constructor(roomID: string){
         this.roomID = roomID;
@@ -50,12 +54,15 @@ export class RoomConfiguration {
             roomID: this.roomID,
             hostCanVote: this.hostCanVote,
             hostCanReveal: this.hostCanReveal,
+            membersCanReset: this.membersCanReset,
+            membersCanReveal: this.membersCanReveal,
             voteOptions: this.voteOptions,
             voteValues: this.voteValues,
             voteAfterReveal: this.voteAfterReveal,
             hostAnonVoting: this.hostAnonVoting,
             memberAnonVoting: this.memberAnonVoting,
             resetBeforeReveal: this.resetBeforeReveal,
+            nonVoteReveal: this.nonVoteReveal,
         }
     }
 }
@@ -155,6 +162,10 @@ export class Room {
             console.log("host cannot reveal");
             return;
         }
+        if(!this.config.membersCanReveal && this.getMember(ws)?.role !== "host"){
+            console.log("members cannot reveal");
+            return;
+        }
         this.logAction(ws, "revealed cards");
         this.cardsRevealed = true;
         this.broadcastRoomStatus();
@@ -177,6 +188,8 @@ export class Room {
         }
 
         this.members.push(member);
+        this.logAction(ws, "Joined");
+
         this.broadcastRoomStatus();
     }
 
@@ -244,7 +257,7 @@ export class Room {
         return {
             type: "roomStatus",
             cardsRevealed: this.cardsRevealed,
-            logs: this.logs.map((logItem)=>logItem.value()),
+            logs: this.logs.map((logItem)=>`${logItem.value()}`),
             config: this.config.value(),
             currentURL: this.currentURL,
             members: memberList,
