@@ -1,8 +1,9 @@
 #siteHeader {
     position:sticky;
     top: 0;
-    background-color: rgb(75, 75, 75);
+    background-color: rgb(180, 180, 180);
     text-align: left;
+    z-index: 1000; 
 
 
     h1 {
@@ -13,6 +14,10 @@
     a {
         text-decoration: none;
     }
+
+    display: flex;
+    align-items: center; /* vertically center */
+    justify-content: space-between; /* place h1 on left, switch on right */
 }
 
 #siteBackground {
@@ -29,7 +34,7 @@
     min-height: 100vh;
     display:flex;
     flex-direction: column;
-    background-color: rgb(48, 48, 48);
+    background-color: rgb(212, 212, 212);
 }
 
 .iframe-container {
@@ -44,4 +49,276 @@
   border: none;
   width: 100%;
   height: 100%;
+}
+
+.roomTile{
+    background-color: rgb(180, 180, 180);
+}
+
+.room-status-container {
+    position: relative;
+    min-height: 60px;
+}
+
+/* Timer anchored top-right */
+.timer-container {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+.timer-container {
+    transition: opacity 0.2s ease;
+}
+
+/* Timer smaller + subtle */
+.timer-text {
+    font-size: 1.5rem;
+    font-weight: 500;
+    opacity: 0.75;
+    letter-spacing: 0.5px;
+}
+
+/* Average large and centered focus */
+.average-text {
+    font-size: 2.2rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.timer-text.warning {
+    color: #ff031c;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.status-text {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.status-value {
+    font-weight: 600;
+}
+
+.status-link {
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 2px;
+    transition: opacity 0.15s ease;
+}
+
+.status-link:hover {
+    opacity: 0.7;
+}
+
+.app-choice-btn {
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.app-choice-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.10);
+}
+
+.app-choice-btn:active {
+    transform: translateY(0px);
+}
+
+.player-card:hover {
+    transform: translateY(-4px);
+}
+
+.app-action-btn {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    border-width: 1px;
+}
+
+.app-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.app-action-btn:active {
+    transform: translateY(0px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* Host Options Accordion */
+.host-options-accordion .accordion-button {
+    font-weight: 600;
+    font-size: 1rem;
+    background-color: #f8f9fa;
+    color: #212529;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    border-radius: 0.5rem;
+}
+
+.host-options-accordion .accordion-body {
+    padding: 1rem 1.25rem;
+    background-color: #ffffff;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.host-options-accordion .accordion-item {
+    border: none;
+    margin-bottom: 0.5rem;
+}
+
+.host-logs-body {
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+/* Subtle spacing for settings rows */
+.host-options-accordion .row {
+    gap: 0.75rem;
+}
+
+
+/* Container for the switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  margin-right: 20px;
+}
+
+/* Hide default checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+/* The track (background) */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  border-radius: 14px;
+  background-color: #4a4a4a;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transition: background-color 0.3s ease;
+}
+
+/* The circle knob */
+.slider::before {
+  position: absolute;
+  content: "";
+  height: 24px;
+  width: 24px;
+  left: 2px;
+  top: 2px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* When checkbox is checked: dark mode enabled */
+.switch input:checked + .slider {
+  background-color: #ccc;
+}
+
+/* Move knob to right */
+.switch input:checked + .slider::before {
+  transform: translateX(20px);
+}
+
+/* Dark Mode Styling changes */
+body.dark-mode {
+  color: #eee;
+  transition: background-color 0.3s ease, color 0.3s ease;
+
+  #siteHeader {
+    background-color: rgb(75, 75, 75);
+  }
+
+  #root {
+    background-color: rgb(48, 48, 48);
+  }
+}
+
+/* Styling for BarChartDisplay */
+
+.bar-chart {
+    display: flex;
+    align-items: flex-end; /* Bars start from the bottom */
+    /* Height is now set inline, but keep for visual default if no inline */
+    height: 200px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px; /* Space for labels below the axis line */
+    gap: 10px;
+    justify-content: space-around;
+    overflow-x: auto;
+    /* Crucially, ensure no overflow: hidden or scroll that clips labels */
+    overflow-y: visible;
+}
+
+.bar-chart::-webkit-scrollbar {
+    height: 8px; /* For webkit browsers */
+}
+
+.bar-chart::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.bar-chart::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 40px;
+    height: 100%; /* Take full height of .bar-chart */
+    position: relative; /* THIS IS KEY for positioning bar-value */
+    overflow: visible;
+}
+
+.bar {
+    width: 80%; /* Width of the actual colored bar */
+    border-radius: 4px 4px 0 0; /* Rounded top corners */
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    position: relative; /* For positioning the value text */
+    transition: height 0.3s ease-in-out; /* Smooth transition for updates */
+}
+
+.bar-value {
+    position: absolute;
+    top: -20px; /* Position above the bar */
+    font-size: 0.8em;
+    font-weight: bold;
+    color: #333; /* Darker text for readability */
+}
+
+.bar-label {
+    margin-top: 5px;
+    font-size: 0.9em;
+    text-align: center;
+    word-break: break-word; /* Break long labels */
+}
+
+.y-axis-label {
+    text-align: end; /* Align to the right side of the chart */
+    padding-right: 10px; /* Small offset */
 }

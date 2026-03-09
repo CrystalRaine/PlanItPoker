@@ -28,7 +28,8 @@ function removeMemberFromRoom(ws: WebSocket){
         clients.delete(ws);
     }
 }
-function createRoom(roomName: string, username: string){
+
+function createRoom(roomName: string, username: string, asAdmin: boolean){
 
     if(!username){
         console.log("must create with a username");
@@ -43,7 +44,7 @@ function createRoom(roomName: string, username: string){
         const roomNum = roomName;
         const memberName = `${username}`;
         let room = new Room(roomNum);
-        room.addMember(memberName, null);
+        // room.addMember(memberName, null, asAdmin);
         
         rooms.set(roomNum, room);
         console.log(`created new room ${roomNum} as ${memberName}`)
@@ -108,25 +109,56 @@ export default function SetupWSS(server:http.Server) {
                         const memberName = `${messageData.username}`;
                         let room = rooms.get(roomNum)
                         
-                        room!.addMember(memberName, ws);
+                        room!.addMember(memberName, ws, false);
                         clients.set(ws, roomNum);
                         console.log(`joined room ${roomNum} as ${memberName}`)
                     } else {
                         const roomNum = messageData.input;
                         const memberName = `${messageData.username}`;
 
-                        createRoom(roomNum, memberName);
-                        console.log(`created room ${roomNum} as ${memberName}`)
+                        createRoom(roomNum, memberName, false);
 
                         let room = rooms.get(roomNum)
-                        room!.addMember(memberName, ws);
+                        room!.addMember(memberName, ws, false);
+                        clients.set(ws, roomNum);
+                        console.log(`joined room ${roomNum} as ${memberName}`)
+                    }
+                    break;
+                case "create":
+                    if(!messageData.username){
+                        console.log("must join with a username");
+                        break;
+                    }
+
+                    if(!messageData.input) {
+                        console.log("please give a room ID to create");
+                        break;
+                    }
+
+                    removeMemberFromRoom(ws);
+                    if(rooms.has(messageData.input)){
+                        const roomNum = messageData.input;
+                        const memberName = `${messageData.username}`;
+                        let room = rooms.get(roomNum)
+                        
+                        room!.addMember(memberName, ws, true);
+                        clients.set(ws, roomNum);
+                        console.log(`joined room ${roomNum} as ${memberName}`)
+                    } else {
+                        const roomNum = messageData.input;
+                        const memberName = `${messageData.username}`;
+
+                        createRoom(roomNum, memberName, true);
+
+                        let room = rooms.get(roomNum)
+                        room!.addMember(memberName, ws, true);
                         clients.set(ws, roomNum);
                         console.log(`joined room ${roomNum} as ${memberName}`)
                     }
                     break;
                 default: 
             }
-        })
+        });
 
         ws.on('close', () => {
             removeMemberFromRoom(ws);

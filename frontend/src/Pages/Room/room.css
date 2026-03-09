@@ -27,3 +27,7 @@
 .buttonMTop {
     margin-top: 2em;
 }
+
+.no-text-bg p {
+  background-color: transparent !important;
+}

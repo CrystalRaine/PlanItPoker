@@ -2,15 +2,6 @@ import { WebSocket } from 'ws'
 
 export class Options {
     [key: string]: any;
-    roomID?: string;
-    hostCanVote?: boolean;
-    hostCanReveal?: boolean;
-    voteAfterReveal?: boolean;
-    voteOptions?: string[];
-    voteValues?: number[];
-    currentURL?: string;
-    hostAnonVoting?: boolean;
-    memberAnonVoting?: boolean;
 }
 
 export class LogItem {
@@ -31,8 +22,10 @@ export class LogItem {
 
 export class RoomConfiguration {
     [key: string]: any;
-    // Defaults
+
+    // Setting Defaults
     roomID: string = "";
+    currentURL: string = "";
     hostCanVote: boolean = true;
     hostCanReveal: boolean = true;
     membersCanReveal: boolean = false;
@@ -44,6 +37,22 @@ export class RoomConfiguration {
     resetBeforeReveal: boolean = false;
     membersCanReset: boolean = false;
     nonVoteReveal: boolean = false;
+    timerEnabled: boolean = false;
+    timerStartOnReset: boolean = false;
+    revealOnTimerFinish: boolean = false;
+    timerStartTimestamp: number = 0;
+    timerLength: number = 30;
+    primaryColor: string = "#165fa7";
+    secondaryColor: string = "#828282";
+    notVotedColor: string = "#bb2828";
+    votedColor: string = "#8a9216";
+    revealedColor: string = "#44714a";
+    showAvg: boolean = true;
+    showBar: boolean = false;
+    showCards: boolean = true;
+    showVoteCount: boolean = false;
+    showBarLive: boolean = false;
+    showLiveCards: boolean = false;
 
     public constructor(roomID: string){
         this.roomID = roomID;
@@ -52,17 +61,44 @@ export class RoomConfiguration {
     value(){
         return {
             roomID: this.roomID,
+            currentURL: this.currentURL,
+
+            // roles
             hostCanVote: this.hostCanVote,
             hostCanReveal: this.hostCanReveal,
             membersCanReset: this.membersCanReset,
             membersCanReveal: this.membersCanReveal,
+
+            // voting
             voteOptions: this.voteOptions,
             voteValues: this.voteValues,
             voteAfterReveal: this.voteAfterReveal,
             hostAnonVoting: this.hostAnonVoting,
             memberAnonVoting: this.memberAnonVoting,
+            showLiveCards: this.showLiveCards,
             resetBeforeReveal: this.resetBeforeReveal,
             nonVoteReveal: this.nonVoteReveal,
+
+            // timer
+            timerEnabled: this.timerEnabled,
+            timerStartTimestamp: this.timerStartTimestamp,
+            timerStartOnReset: this.timerStartOnReset,
+            revealOnTimerFinish: this.revealOnTimerFinish,
+            timerLength: this.timerLength,
+
+            // styling
+            primaryColor: this.primaryColor,
+            secondaryColor: this.secondaryColor,
+            notVotedColor: this.notVotedColor,
+            votedColor: this.votedColor,
+            revealedColor: this.revealedColor,
+
+            // vote modes
+            showBar: this.showBar,
+            showAvg: this.showAvg,
+            showCards: this.showCards,
+            showBarLive: this.showBarLive,
+            showVoteCount: this.showVoteCount,
         }
     }
 }
@@ -89,12 +125,12 @@ export class Member {
     }
 
     value(ws: WebSocket, revealed: boolean){
-        let choice = revealed || ws === this.ws ? this.currentChoice : null;
+        let choice = (revealed || ws === this.ws) ? this.currentChoice : null;
         
         return {
             name: this.name,
-            currentChoice: choice ? choice : null,
-            voted: !(!this.currentChoice), 
+            currentChoice: choice,
+            voted: !(!this.currentChoice),
             role: this.role
         }
     }
@@ -103,7 +139,6 @@ export class Member {
 export class Room {
     members: Member[] = [];
     config: RoomConfiguration;
-    currentURL: string = "";
     logs: LogItem[] = [];
     cardsRevealed: boolean = false;
 
@@ -143,7 +178,7 @@ export class Room {
             console.log("host cannot vote");
             return;
         }
-        if(!(!this.cardsRevealed || (this.cardsRevealed && this.config.voteAfterReveal))) {
+        if(!(!this.cardsRevealed || (this.cardsRevealed && (this.config.voteAfterReveal && !(this.config.showBarLive && this.config.showBar))))) {
             console.log("cannot vote when cards are revealed");
             return;
         }
@@ -168,12 +203,18 @@ export class Room {
         }
         this.logAction(ws, "revealed cards");
         this.cardsRevealed = true;
+        this.config.timerStartTimestamp = 0;
         this.broadcastRoomStatus();
     }
 
-    addMember(name: string, ws: WebSocket | null){
+    addMember(name: string, ws: WebSocket | null, asAdmin: boolean){
+
+        if(this.members.find(member => member.ws === ws)) {
+            return;
+        }
 
         // if it's the host joining or re-joining, attach to host member
+        // this bypasses the as admin check so a host can 'join' a room they created
         let host:Member|undefined = this.members.find(member => member.role === 'host');
         if(host && !host.ws && host.name === name) {
             host.ws = ws;
@@ -182,9 +223,9 @@ export class Room {
         }
 
         let member = new Member(name, ws);
-        if(this.members.length === 0) {
+        if(asAdmin && !host) {
             member.makeHost();
-            this.logAction(null, "created the room");
+            this.logAction(null, "host joined");
         }
 
         this.members.push(member);
@@ -220,7 +261,7 @@ export class Room {
     }
 
     resetChoices(ws: WebSocket){
-        if(!this.cardsRevealed && !this.config.resetBeforeReveal){
+        if(!this.cardsRevealed && !(this.config.resetBeforeReveal || (this.config.showBarLive && this.config.showBar))){
             return;
         }
         this.members.forEach((member: Member)=>{
@@ -237,7 +278,7 @@ export class Room {
         let memberList = this.members
             .filter((member) => member.ws !== ws)
             .map(member => {
-                return member.value(ws, this.cardsRevealed)
+                return member.value(ws, (this.cardsRevealed || this.config.showLiveCards || (this.config.showBarLive && this.config.showBar)))
             });
         
         if(clientMember?.role === 'host' && !this.config.hostAnonVoting) {
@@ -259,7 +300,6 @@ export class Room {
             cardsRevealed: this.cardsRevealed,
             logs: this.logs.map((logItem)=>`${logItem.value()}`),
             config: this.config.value(),
-            currentURL: this.currentURL,
             members: memberList,
             client: clientMember?.value(ws, this.cardsRevealed),
         }

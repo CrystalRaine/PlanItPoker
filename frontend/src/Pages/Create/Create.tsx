@@ -70,7 +70,7 @@ export default function Create(){
 
                         Cookies.set("username", user, { expires: 7 });
                         Cookies.set("roomID", room, { expires: 7 });
-                        navigate(`/room/${room}/${user}`);
+                        navigate(`/host/${room}/${user}`);
                     }}
                     >
                     Create

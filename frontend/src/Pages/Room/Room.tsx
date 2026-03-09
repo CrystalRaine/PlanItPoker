@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import { Col, Container, Row } from 'react-bootstrap';
 import Host from './Host';
 import Member from './Member';
+import { getTextColor } from '../../utilities/utility';
 
 
+const backendBaseUrl = 'http://192.168.0.172:3000';
 
 export type Member = {
     name: string,
@@ -18,6 +20,7 @@ export type Member = {
 export type RoomConfig = {
     [key: string]: any;
     roomID?: string,
+    currentURL?: string,
     hostCanVote?: boolean,
     hostCanReveal?: boolean,
     membersCanReveal?: boolean,
@@ -29,6 +32,22 @@ export type RoomConfig = {
     voteValues?: number[],
     resetBeforeReveal?: boolean,
     membersCanReset?: boolean,
+    timerEnabled?: boolean,
+    timerStartOnReset?: boolean,
+    revealOnTimerFinish?: boolean,
+    timerStartTimestamp?: number,
+    timerLength?: number,
+    primaryColor?: string,
+    secondaryColor?: string,
+    notVotedColor?: string,
+    votedColor?: string,
+    revealedColor?: string,
+    showAvg?: string,
+    showBar?: string,
+    showCards?: string,
+    showBarLive?: string,
+    showVoteCount?: string,
+    showLiveCards?: string,
 }
 
 export type RoomData = {
@@ -37,12 +56,13 @@ export type RoomData = {
     cardsRevealed: any,
     logs: any,
     config: RoomConfig,
-    currentURL: string,
     members: Member[],
     client: Member
 }
 
-export default function Room(){
+const splitscreenEnabled = false;
+
+export default function Room(props: {host?:boolean}){
     const { lastMessage, sendMessage, register } = useWebSocket();
     const {roomID, userID} = useParams()
     const [roomstatus, setRoomStatus] = useState<RoomData | undefined>(undefined);
@@ -52,15 +72,13 @@ export default function Room(){
         if(!message) return;
         if(message.type === 'open' || message.type === 'close') return;
         if(message.type === 'error') return;
-        // alert(JSON.stringify(message));
         setRoomStatus(JSON.parse(message.data));
     }
 
     useEffect(()=>{
-
         sendMessage(
             JSON.stringify({
-                type: "join",
+                type: props.host ? "create" : "join",
                 input: roomID,
                 username: userID,
             })
@@ -82,44 +100,64 @@ export default function Room(){
         userComponent = <Member roomstatus={roomstatus}/>;
     }
 
-    return [
-        <Row className='text-bg-primary'>
-            <Col>
-                <a href={`http://${window.location.host}/join/${roomID}`} onClick={() => { copyURL(roomID) }}>
-                    <h2 className='px-3 text-bg-primary'>
-                        Room ID: {roomID}
-                    </h2>
-                </a>
-            </Col>
-            <Col>
-                <h2 className='px-3 text-end'>
-                    {roomstatus?.client.name}
-                </h2>
-            </Col>
-        </Row>,
-        <Row className="d-flex flex-grow-1" style={{ minHeight: 0 }}>
-            <Col>
-                <Container className="my-2 text-bg-secondary">
-                    {userComponent}
-                </Container>
-            </Col>
-            {roomstatus?.currentURL ? (
+    const bgColor = roomstatus?.config.primaryColor || "#ffffff";
+    const textColor = getTextColor(bgColor);
+    const secondaryColor = roomstatus?.config.secondaryColor || "#ffffff";
+    const secondaryTextColor = getTextColor(secondaryColor);
+
+    return (
+        <Container fluid>
+            <Row style={{
+                    backgroundColor: bgColor,
+                    borderColor: bgColor,
+                    color: textColor,
+                }}>
                 <Col>
-                    <Container
-                        className="m-0 my-2 p-0 text-bg-secondary d-flex flex-column h-100"
-                        style={{ minHeight: 0 }}
-                    >
-                        <iframe
-                        src={roomstatus?.currentURL}
-                        title="Embedded External Page"
-                        width="100%"
-                        style={{ flexGrow: 1, height: "100%", border: "none", minHeight: 0 }}
-                        />
+                    <a href={`http://${window.location.host}/join/${roomID}`} onClick={() => { copyURL(roomID) }}>
+                        <h2 className='px-3' style={{
+                            backgroundColor: bgColor,
+                            borderColor: bgColor,
+                            color: textColor,
+                        }}>
+                            Room ID: {roomID}
+                        </h2>
+                    </a>
+                </Col>
+                <Col>
+                    <h2 className='px-3 text-end'>
+                        {roomstatus?.client.name}
+                    </h2>
+                </Col>
+            </Row>
+            <Row className="d-flex flex-grow-1" style={{ minHeight: 0 }}>
+                <Col>
+                    <Container className="my-2" style={{
+                        backgroundColor: secondaryColor,
+                        borderColor: secondaryColor,
+                        color: secondaryTextColor,
+                    }}>
+                        {userComponent}
                     </Container>
                 </Col>
-            ) : null}
-        </Row>
-    ]
+                {roomstatus?.config.currentURL && splitscreenEnabled ? (
+                    <Col>
+                        <Container
+                            className="m-0 my-2 p-0 text-bg-secondary d-flex flex-column h-100"
+                            style={{ minHeight: 0 }}
+                        >
+                            <iframe
+                            // Construct the proxy URL
+                            src={`${backendBaseUrl}/proxy-embed?url=${encodeURIComponent(roomstatus.config.currentURL)}`}
+                            title="Embedded External Page"
+                            width="100%"
+                            style={{ flexGrow: 1, height: "100%", border: "none", minHeight: 0 }}
+                            />
+                        </Container>
+                    </Col>
+                ) : null}
+            </Row>
+        </Container>
+    )
 } 
 
 export function copyURL(url: string|undefined) {
